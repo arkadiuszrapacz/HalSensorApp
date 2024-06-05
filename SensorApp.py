@@ -111,6 +111,18 @@ class SerialDataDisplay(QWidget):
             else:
                 self.diag2_label.setStyleSheet("background-color: green;")
 
+            pwm_value = values[4]
+            if pwm_value <= 20:
+                self.pwm_label.setStyleSheet("background-color: red;")
+            elif pwm_value > 20 and pwm_value <= 50:
+                self.pwm_label.setStyleSheet("background-color: gray;")
+            elif pwm_value > 50 and pwm_value <= 80:
+                self.pwm_label.setStyleSheet("background-color: lightblue;")
+            elif pwm_value > 80 and pwm_value <= 99:
+                self.pwm_label.setStyleSheet("background-color: cyan;")
+            else:
+                self.pwm_label.setStyleSheet("background-color: green;")
+
     def closeEvent(self, event):
         self.serial.close()
         event.accept()
