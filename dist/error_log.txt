@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "SensorApp.py", line 111, in run
+  File "serial\serialwin32.py", line 271, in read
+AttributeError: 'NoneType' object has no attribute 'hEvent'
