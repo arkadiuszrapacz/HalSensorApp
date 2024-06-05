@@ -3,7 +3,7 @@ import traceback
 import serial
 import serial.tools.list_ports
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
-from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel
 
 
 def excepthook(exc_type, exc_value, exc_tb):
@@ -84,14 +84,17 @@ class SerialDataDisplay(QWidget):
         self.layout.addWidget(self.diag2_label, 1, 4)
 
         # Tekst wyjaśniający
-        explanation_label = QLabel("1 - Flaga 1, 2 - Flaga 2")
+        explanation_label = QLabel("Diag 1, 2 - diagnostyka (0 - false, 1 - true)")
         explanation_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(explanation_label, 2, 0, 1, 5)
+
+        self.setFixedSize(600, 200)
 
         self.serial = serial.Serial(port, baudrate)
         self.receive_thread = SerialReceiveThread(self.serial, self.update_values)
         self.receive_thread.start()
 
+    # Aktualizacja wskazań wartości / indykatorów
     def update_values(self, values):
         if len(values) >= 5:
             self.voltage_label.setText(str(values[0]))
@@ -127,7 +130,7 @@ class SerialDataDisplay(QWidget):
         self.serial.close()
         event.accept()
 
-
+# Zbieranie oraz rozdzielanie danych z portu szeregowego
 class SerialReceiveThread(QThread):
     data_received = pyqtSignal(list)
 
