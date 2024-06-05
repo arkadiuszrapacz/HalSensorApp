@@ -3,7 +3,7 @@ import traceback
 import serial
 import serial.tools.list_ports
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
-from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QVBoxLayout
 
 
 def excepthook(exc_type, exc_value, exc_tb):
@@ -29,53 +29,64 @@ class SerialDataDisplay(QWidget):
         self.port = port
         self.baudrate = baudrate
 
-        self.setWindowTitle("Odczyt danych z portu szeregowego")
+        self.setWindowTitle("Hall Sensor Application")
         self.layout = QGridLayout()
         self.setLayout(self.layout)
 
         # Etykiety kolumn
-        voltage_label = QLabel('Napięcie')
-        current_label = QLabel('Natężenie prądu')
+        voltage_label = QLabel('Voltage [mV]')
+        current_label = QLabel('Current [mA]')
+        pwm_label = QLabel('PWM [%]')
+        diag1_label = QLabel('Diag 1')
+        diag2_label = QLabel('Diag 2')
 
         voltage_label.setStyleSheet("background-color: lightblue;")
         current_label.setStyleSheet("background-color: lightgreen;")
+        pwm_label.setStyleSheet("background-color: thistle;")
+        diag1_label.setStyleSheet("background-color: lightsalmon;")
+        diag2_label.setStyleSheet("background-color: lightsalmon;")
 
         voltage_label.setAlignment(Qt.AlignCenter)
         current_label.setAlignment(Qt.AlignCenter)
+        pwm_label.setAlignment(Qt.AlignCenter)
+        diag1_label.setAlignment(Qt.AlignCenter)
+        diag2_label.setAlignment(Qt.AlignCenter)
 
         self.layout.addWidget(voltage_label, 0, 0)
         self.layout.addWidget(current_label, 0, 1)
+        self.layout.addWidget(pwm_label, 0, 2)
+        self.layout.addWidget(diag1_label, 0, 3)
+        self.layout.addWidget(diag2_label, 0, 4)
 
         # Etykiety wartości
         self.voltage_label = QLabel("-")
         self.current_label = QLabel("-")
+        self.pwm_label = QLabel("-")
+        self.diag1_label = QLabel("-")
+        self.diag2_label = QLabel("-")
 
         self.voltage_label.setStyleSheet("background-color: lightblue;")
         self.current_label.setStyleSheet("background-color: lightgreen;")
+        self.pwm_label.setStyleSheet("background-color: thistle;")
+        self.diag1_label.setStyleSheet("background-color: lightsalmon;")
+        self.diag2_label.setStyleSheet("background-color: lightsalmon;")
 
         self.voltage_label.setAlignment(Qt.AlignCenter)
         self.current_label.setAlignment(Qt.AlignCenter)
+        self.pwm_label.setAlignment(Qt.AlignCenter)
+        self.diag1_label.setAlignment(Qt.AlignCenter)
+        self.diag2_label.setAlignment(Qt.AlignCenter)
 
         self.layout.addWidget(self.voltage_label, 1, 0)
         self.layout.addWidget(self.current_label, 1, 1)
-
-        # Indykatory flag
-        self.flag_indicators = []
-        indicator_layout = QVBoxLayout()
-        for i in range(3):
-            indicator = QLabel(str(i + 1))
-            indicator.setFixedSize(40, 40)
-            indicator.setAlignment(Qt.AlignCenter)
-            indicator.setStyleSheet("background-color: green; border: 1px solid black; font-size: 16px;")
-            self.flag_indicators.append(indicator)
-            indicator_layout.addWidget(indicator)
-
-        self.layout.addLayout(indicator_layout, 0, 2, 2, 1)
+        self.layout.addWidget(self.pwm_label, 1, 2)
+        self.layout.addWidget(self.diag1_label, 1, 3)
+        self.layout.addWidget(self.diag2_label, 1, 4)
 
         # Tekst wyjaśniający
-        explanation_label = QLabel("1 - Flaga 1, 2 - Flaga 2, 3 - Flaga 3")
+        explanation_label = QLabel("1 - Flaga 1, 2 - Flaga 2")
         explanation_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(explanation_label, 2, 0, 1, 3)
+        self.layout.addWidget(explanation_label, 2, 0, 1, 5)
 
         self.serial = serial.Serial(port, baudrate)
         self.receive_thread = SerialReceiveThread(self.serial, self.update_values)
@@ -85,13 +96,20 @@ class SerialDataDisplay(QWidget):
         if len(values) >= 5:
             self.voltage_label.setText(str(values[0]))
             self.current_label.setText(str(values[1]))
+            self.pwm_label.setText(str(values[4]))
+            self.diag1_label.setText(str(values[3]))
+            self.diag2_label.setText(str(values[2]))
 
-            flags = values[2:5]
-            for i, flag in enumerate(flags):
-                if flag == 1:
-                    self.flag_indicators[i].setStyleSheet("background-color: red; border: 1px solid black; font-size: 16px;")
-                else:
-                    self.flag_indicators[i].setStyleSheet("background-color: green; border: 1px solid black; font-size: 16px;")
+            # Zmiana koloru wypełnienia indykatorów na podstawie wartości
+            if values[3] == 0:
+                self.diag1_label.setStyleSheet("background-color: red;")
+            else:
+                self.diag1_label.setStyleSheet("background-color: green;")
+
+            if values[2] == 0:
+                self.diag2_label.setStyleSheet("background-color: red;")
+            else:
+                self.diag2_label.setStyleSheet("background-color: green;")
 
     def closeEvent(self, event):
         self.serial.close()
@@ -126,7 +144,7 @@ if __name__ == '__main__':
     port = find_stlink_virtual_com_port()
     if port is not None:
         window = SerialDataDisplay(port, 115200)
-        window.setGeometry(200, 200, 400, 200)
+        window.setGeometry(200, 200, 600, 200)
         window.show()
         sys.exit(app.exec_())
     else:
