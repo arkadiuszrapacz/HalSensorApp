@@ -1,4 +1,4 @@
 Traceback (most recent call last):
-  File "SensorApp.py", line 129, in run
+  File "SensorApp.py", line 144, in run
   File "serial\serialwin32.py", line 285, in read
 TypeError: byref() argument must be a ctypes instance, not 'NoneType'

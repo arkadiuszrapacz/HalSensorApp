@@ -1,6 +1,6 @@
 Traceback (most recent call last):
   File "C:\Users\arkad\Desktop\SensorApp\SensorApp.py", line 144, in run
     data = self.serial.readline().decode('utf-8').strip()
-  File "C:\Users\arkad\Desktop\SensorApp\venv\lib\site-packages\serial\serialwin32.py", line 271, in read
-    win32.ResetEvent(self._overlapped_read.hEvent)
-AttributeError: 'NoneType' object has no attribute 'hEvent'
+  File "C:\Users\arkad\Desktop\SensorApp\venv\lib\site-packages\serial\serialwin32.py", line 285, in read
+    ctypes.byref(self._overlapped_read))
+TypeError: byref() argument must be a ctypes instance, not 'NoneType'

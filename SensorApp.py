@@ -18,7 +18,7 @@ sys.excepthook = excepthook
 def find_stlink_virtual_com_port():
     ports = serial.tools.list_ports.comports()
     for port in ports:
-        if 'STMicroelectronics STLink Virtual COM Port' in port.description:
+        if 'USB Serial Port' in port.description:
             return port.device
     return None
 
@@ -163,4 +163,4 @@ if __name__ == '__main__':
         window.show()
         sys.exit(app.exec_())
     else:
-        print("Nie znaleziono urządzenia STMicroelectronics STLink Virtual COM Port")
+        print("Nie znaleziono urządzenia USB Serial Port")
