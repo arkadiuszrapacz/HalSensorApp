@@ -7,12 +7,7 @@
     <list default="true" id="d68441c4-706d-4dfb-9363-2c6115ac9825" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SensorApp.py" beforeDir="false" afterPath="$PROJECT_DIR$/SensorApp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/SensorApp/Analysis-00.toc" beforeDir="false" afterPath="$PROJECT_DIR$/build/SensorApp/Analysis-00.toc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/SensorApp/EXE-00.toc" beforeDir="false" afterPath="$PROJECT_DIR$/build/SensorApp/EXE-00.toc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/SensorApp/PKG-00.toc" beforeDir="false" afterPath="$PROJECT_DIR$/build/SensorApp/PKG-00.toc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/SensorApp/SensorApp.pkg" beforeDir="false" afterPath="$PROJECT_DIR$/build/SensorApp/SensorApp.pkg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/SensorApp/warn-SensorApp.txt" beforeDir="false" afterPath="$PROJECT_DIR$/build/SensorApp/warn-SensorApp.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dist/SensorApp.exe" beforeDir="false" afterPath="$PROJECT_DIR$/dist/SensorApp.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/error_log.txt" beforeDir="false" afterPath="$PROJECT_DIR$/error_log.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../test/bodziogra" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

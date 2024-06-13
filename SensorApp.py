@@ -5,15 +5,12 @@ import serial.tools.list_ports
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel
 
-
 def excepthook(exc_type, exc_value, exc_tb):
     with open("error_log.txt", "w") as f:
         traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
     sys.exit(1)
 
-
 sys.excepthook = excepthook
-
 
 def find_board():
     ports = serial.tools.list_ports.comports()
@@ -21,7 +18,6 @@ def find_board():
         if 'USB Serial Port' in port.description:
             return port.device
     return None
-
 
 class SerialDataDisplay(QWidget):
     def __init__(self, port, baudrate, parent=None):
@@ -39,7 +35,7 @@ class SerialDataDisplay(QWidget):
         self.timer.timeout.connect(self.update_interface)
         self.timer.start(100)
 
-        # Etykiety kolumn
+        # Column Labels
         voltage_label = QLabel('Voltage [V]')
         current_label = QLabel('Current [mA]')
         pwm_label = QLabel('PWM Duty Cycle [%]')
@@ -64,7 +60,7 @@ class SerialDataDisplay(QWidget):
         self.layout.addWidget(diag1_label, 0, 3)
         self.layout.addWidget(diag2_label, 0, 4)
 
-        # Etykiety wartości
+        # Value Labels
         self.voltage_label = QLabel("-")
         self.current_label = QLabel("-")
         self.pwm_label = QLabel("-")
@@ -89,31 +85,36 @@ class SerialDataDisplay(QWidget):
         self.layout.addWidget(self.diag1_label, 1, 3)
         self.layout.addWidget(self.diag2_label, 1, 4)
 
-        # Tekst wyjaśniający
-        explanation_label_1 = QLabel("<b>OC Diag (Overcurrent)</b> - wyjście diagnostyczne informujące o przeciążeniu prądowym.<br> 0 - wykryto przeciążenie, 1 - nie wykryto przeciążenia. ")
+        # Explanation Labels
+        explanation_label_1 = QLabel("<b>OC Diag (Overcurrent)</b> - Diagnostic output indicating overcurrent.<br> 0 - overcurrent detected, 1 - no overcurrent.")
         explanation_label_1.setAlignment(Qt.AlignCenter)
-        explanation_label_1.setWordWrap(True)  # Włączenie zawijania tekstu
+        explanation_label_1.setWordWrap(True)
         self.layout.addWidget(explanation_label_1, 2, 0, 1, 5)
 
-        # Tekst wyjaśniający
-        explanation_label_2 = QLabel("<b> AMC Diag </b> - wyjście diagnostyczne informujące o poprawności działania ukłądu. <br> 0 - wykryto problem w działaniu układu, 1 - poprawne działanie")
+        explanation_label_2 = QLabel("<b>AMC Diag</b> - Diagnostic output indicating the correct operation of the system.<br> 0 - problem detected, 1 - operation normal.")
         explanation_label_2.setAlignment(Qt.AlignCenter)
-        explanation_label_2.setWordWrap(True)  # Włączenie zawijania tekstu
+        explanation_label_2.setWordWrap(True)
         self.layout.addWidget(explanation_label_2, 3, 0, 1, 5)
 
-        # Tekst wyjaśniający
-        explanation_label_3 = QLabel("<b>Współczynnik wypełnienia PWM</b> <br> <b>819 +/- 2%</b> Thermal&Sensor Alert<br><b>2048 +/- 2%</b> Sensor Alert<br><b>3276 +/- 2% </b> Thermal Alert<br><b>4095</b> No PWM Duty Cycle problem")
+        explanation_label_3 = QLabel("<b>PWM Duty Cycle</b><br> <b>819 +/- 2%</b> Thermal&Sensor Alert<br><b>2048 +/- 2%</b> Sensor Alert<br><b>3276 +/- 2%</b> Thermal Alert<br><b>4095</b> No PWM Duty Cycle problem")
         explanation_label_3.setAlignment(Qt.AlignCenter)
-        explanation_label_3.setWordWrap(True)  # Włączenie zawijania tekstu
+        explanation_label_3.setWordWrap(True)
         self.layout.addWidget(explanation_label_3, 4, 0, 1, 5)
 
         self.setFixedSize(600, 400)
 
         self.serial = serial.Serial(port, baudrate)
-        self.receive_thread = SerialReceiveThread(self.serial, self.update_values)
+        self.receive_thread = SerialReceiveThread(self.serial)
+        self.receive_thread.data_received.connect(self.update_values)
         self.receive_thread.start()
 
-    # Aktualizacja wskazań wartości / indykatorów
+        self.read_timer = QTimer(self)
+        self.read_timer.timeout.connect(self.request_data)
+        self.read_timer.start(250)
+
+    def request_data(self):
+        self.receive_thread.request_data()
+
     def update_values(self, values):
         if len(values) >= 5:
             self.voltage_label.setText(str(values[0]))
@@ -121,9 +122,9 @@ class SerialDataDisplay(QWidget):
             self.pwm_label.setText(str(values[4]))
             self.diag1_label.setText(str(values[3]))
             self.diag2_label.setText(str(values[2]))
-            self.latest_values = values;
+            self.latest_values = values
 
-            # Zmiana koloru wypełnienia indykatorów na podstawie wartości
+            # Update indicator colors based on values
             if values[3] == 0:
                 self.diag1_label.setStyleSheet("background-color: red;")
             else:
@@ -153,30 +154,32 @@ class SerialDataDisplay(QWidget):
             self.update_values(self.latest_values)
             self.latest_values = None
 
-# Zbieranie oraz rozdzielanie danych z portu szeregowego
 class SerialReceiveThread(QThread):
     data_received = pyqtSignal(list)
 
-    def __init__(self, serial, callback):
+    def __init__(self, serial):
         super().__init__()
         self.serial = serial
-        self.callback = callback
+        self.request_data_flag = False
 
     def run(self):
         while True:
-            data = self.serial.readline().decode('utf-8').strip()
-            values = data.split(';')
+            if self.request_data_flag:
+                self.request_data_flag = False
+                data = self.serial.readline().decode('utf-8').strip()
+                values = data.split(';')
+                if len(values) >= 5:
+                    try:
+                        values = [float(val) for val in values]
+                        values[0] /= 10.0
+                        values[1] /= 100.0
+                        self.data_received.emit(values)
+                    except ValueError:
+                        print("Error: Unable to convert value to numbers.")
+                        continue
 
-            if len(values) >= 5:
-                try:
-                    values = [float(val) for val in values]
-                    values[0] /= 10.0
-                    values[1] /= 100.0
-                    self.callback(values)
-                except ValueError:
-                    print("Error: Unable to convert value to numbers.")
-                    continue
-
+    def request_data(self):
+        self.request_data_flag = True
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
