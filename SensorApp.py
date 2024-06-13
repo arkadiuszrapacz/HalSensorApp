@@ -15,7 +15,7 @@ def excepthook(exc_type, exc_value, exc_tb):
 sys.excepthook = excepthook
 
 
-def find_stlink_virtual_com_port():
+def find_board():
     ports = serial.tools.list_ports.comports()
     for port in ports:
         if 'USB Serial Port' in port.description:
@@ -36,9 +36,9 @@ class SerialDataDisplay(QWidget):
         # Etykiety kolumn
         voltage_label = QLabel('Voltage [mV]')
         current_label = QLabel('Current [mA]')
-        pwm_label = QLabel('PWM [%]')
-        diag1_label = QLabel('Diag 1')
-        diag2_label = QLabel('Diag 2')
+        pwm_label = QLabel('PWM Duty Cycle [%]')
+        diag1_label = QLabel('OC Diag')
+        diag2_label = QLabel('AMC Diag')
 
         voltage_label.setStyleSheet("background-color: lightblue;")
         current_label.setStyleSheet("background-color: lightgreen;")
@@ -84,11 +84,24 @@ class SerialDataDisplay(QWidget):
         self.layout.addWidget(self.diag2_label, 1, 4)
 
         # Tekst wyjaśniający
-        explanation_label = QLabel("Diag 1, 2 - diagnostyka (0 - false, 1 - true)")
-        explanation_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(explanation_label, 2, 0, 1, 5)
+        explanation_label_1 = QLabel("<b>OC Diag (Overcurrent)</b> - wyjście diagnostyczne informujące o przeciążeniu prądowym.<br> 0 - wykryto przeciążenie, 1 - nie wykryto przeciążenia. ")
+        explanation_label_1.setAlignment(Qt.AlignCenter)
+        explanation_label_1.setWordWrap(True)  # Włączenie zawijania tekstu
+        self.layout.addWidget(explanation_label_1, 2, 0, 1, 5)
 
-        self.setFixedSize(600, 200)
+        # Tekst wyjaśniający
+        explanation_label_2 = QLabel("<b> AMC Diag </b> - wyjście diagnostyczne informujące o poprawności działania ukłądu. <br> 0 - wykryto problem w działaniu układu, 1 - poprawne działanie")
+        explanation_label_2.setAlignment(Qt.AlignCenter)
+        explanation_label_2.setWordWrap(True)  # Włączenie zawijania tekstu
+        self.layout.addWidget(explanation_label_2, 3, 0, 1, 5)
+
+        # Tekst wyjaśniający
+        explanation_label_3 = QLabel("<b>Współczynnik wypełnienia PWM</b> <br> <b>819 +/- 2%</b> Thermal&Sensor Alert<br><b>2048 +/- 2%</b> Sensor Alert<br><b>3276 +/- 2% </b> Thermal Alert<br><b>4095</b> No PWM Duty Cycle problem")
+        explanation_label_3.setAlignment(Qt.AlignCenter)
+        explanation_label_3.setWordWrap(True)  # Włączenie zawijania tekstu
+        self.layout.addWidget(explanation_label_3, 4, 0, 1, 5)
+
+        self.setFixedSize(600, 400)
 
         self.serial = serial.Serial(port, baudrate)
         self.receive_thread = SerialReceiveThread(self.serial, self.update_values)
@@ -115,15 +128,13 @@ class SerialDataDisplay(QWidget):
                 self.diag2_label.setStyleSheet("background-color: green;")
 
             pwm_value = values[4]
-            if pwm_value <= 20:
+            if pwm_value >= 737 and pwm_value <= 901:
                 self.pwm_label.setStyleSheet("background-color: red;")
-            elif pwm_value > 20 and pwm_value <= 50:
+            elif pwm_value >= 1966 and pwm_value <= 2130:
                 self.pwm_label.setStyleSheet("background-color: gray;")
-            elif pwm_value > 50 and pwm_value <= 80:
+            elif pwm_value >= 3194 and pwm_value <= 3358:
                 self.pwm_label.setStyleSheet("background-color: lightblue;")
-            elif pwm_value > 80 and pwm_value <= 99:
-                self.pwm_label.setStyleSheet("background-color: cyan;")
-            else:
+            elif pwm_value == 4095:
                 self.pwm_label.setStyleSheet("background-color: green;")
 
     def closeEvent(self, event):
@@ -142,25 +153,25 @@ class SerialReceiveThread(QThread):
     def run(self):
         while True:
             data = self.serial.readline().decode('utf-8').strip()
-            values = data.split(',')
+            values = data.split(';')
 
             if len(values) >= 5:
                 try:
                     values = [float(val) for val in values]
                     self.callback(values)
                 except ValueError:
-                    print("Błąd: Nie można przekształcić wartości na liczby")
+                    print("Error: Unable to convert value to numbers.")
                     continue
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    port = find_stlink_virtual_com_port()
+    port = find_board()
     if port is not None:
         window = SerialDataDisplay(port, 115200)
-        window.setGeometry(200, 200, 600, 200)
+        window.setGeometry(200, 200, 600, 400)
         window.show()
         sys.exit(app.exec_())
     else:
-        print("Nie znaleziono urządzenia USB Serial Port")
+        print("No sensor found.")
