@@ -2,7 +2,7 @@ import sys
 import traceback
 import serial
 import serial.tools.list_ports
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel
 
 
@@ -29,12 +29,18 @@ class SerialDataDisplay(QWidget):
         self.port = port
         self.baudrate = baudrate
 
+        self.latest_values = None
+
         self.setWindowTitle("Hall Sensor Application")
         self.layout = QGridLayout()
         self.setLayout(self.layout)
 
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_interface)
+        self.timer.start(100)
+
         # Etykiety kolumn
-        voltage_label = QLabel('Voltage [mV]')
+        voltage_label = QLabel('Voltage [V]')
         current_label = QLabel('Current [mA]')
         pwm_label = QLabel('PWM Duty Cycle [%]')
         diag1_label = QLabel('OC Diag')
@@ -115,6 +121,7 @@ class SerialDataDisplay(QWidget):
             self.pwm_label.setText(str(values[4]))
             self.diag1_label.setText(str(values[3]))
             self.diag2_label.setText(str(values[2]))
+            self.latest_values = values;
 
             # Zmiana koloru wypełnienia indykatorów na podstawie wartości
             if values[3] == 0:
@@ -141,6 +148,11 @@ class SerialDataDisplay(QWidget):
         self.serial.close()
         event.accept()
 
+    def update_interface(self):
+        if self.latest_values:
+            self.update_values(self.latest_values)
+            self.latest_values = None
+
 # Zbieranie oraz rozdzielanie danych z portu szeregowego
 class SerialReceiveThread(QThread):
     data_received = pyqtSignal(list)
@@ -158,6 +170,8 @@ class SerialReceiveThread(QThread):
             if len(values) >= 5:
                 try:
                     values = [float(val) for val in values]
+                    values[0] /= 10.0
+                    values[1] /= 100.0
                     self.callback(values)
                 except ValueError:
                     print("Error: Unable to convert value to numbers.")
